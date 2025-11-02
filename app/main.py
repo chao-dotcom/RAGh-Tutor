@@ -11,7 +11,7 @@ import uuid
 import json
 
 from app.config import settings
-from app.schemas.requests import QueryRequest, FeedbackRequest
+from app.schemas.requests import QueryRequest, FeedbackRequest, MultiDocumentQueryRequest
 from app.schemas.responses import QueryResponse, HealthResponse
 from app.middleware.rate_limiter import RateLimiterMiddleware
 from app.security.content_moderation import ContentModerator
@@ -520,6 +520,133 @@ async def detailed_health_check():
     
     health_checker = HealthChecker(app_state)
     return await health_checker.check_all()
+
+
+@app.post("/query/multi-document")
+async def multi_document_query_endpoint(request: MultiDocumentQueryRequest) -> QueryResponse:
+    """Query multiple specific documents"""
+    
+    retrieval_pipeline = app_state['retrieval_pipeline']
+    llm_client = app_state['llm_client']
+    conversation_manager = app_state['conversation_manager']
+    content_moderator = app_state['content_moderator']
+    
+    session_id = str(uuid.uuid4())
+    
+    try:
+        # Content moderation
+        is_safe, reason = content_moderator.check_content(request.query)
+        if not is_safe:
+            raise HTTPException(status_code=400, detail=f"Content violation: {reason}")
+        
+        # Retrieve chunks from specific documents
+        chunks, _ = await retrieval_pipeline.retrieve_by_document(
+            request.query,
+            request.doc_ids,
+            top_k=request.top_k_per_doc * len(request.doc_ids)
+        )
+        
+        # Build prompt
+        from app.generation.prompt_builder import PromptBuilder
+        prompt_builder = PromptBuilder()
+        
+        # Group chunks by document
+        from collections import defaultdict
+        doc_groups = defaultdict(list)
+        for chunk, score in chunks:
+            doc_groups[chunk.doc_id].append((chunk, score))
+        
+        prompt = prompt_builder.build_multi_document_prompt(
+            request.query,
+            doc_groups
+        )
+        
+        # Generate response
+        response = await llm_client.generate(prompt, system=prompt_builder.system_prompt)
+        
+        # Track citations
+        from app.generation.citation_tracker import CitationTracker
+        citation_tracker = CitationTracker()
+        formatted = citation_tracker.format_citations(
+            response,
+            [chunk for chunk, _ in chunks]
+        )
+        
+        return QueryResponse(
+            answer=formatted['text'],
+            citations=formatted['citations'],
+            session_id=session_id,
+            chunks_used=len(chunks)
+        )
+    
+    except Exception as e:
+        logger.error(f"Multi-document query error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/process/audio")
+async def process_audio_endpoint(file: UploadFile = File(...)):
+    """Transcribe audio file"""
+    
+    from app.processing.audio_processor import AudioProcessor
+    
+    # Save temporarily
+    import tempfile
+    import os
+    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp_file:
+        content = await file.read()
+        tmp_file.write(content)
+        temp_path = tmp_file.name
+    
+    try:
+        audio_processor = AudioProcessor()
+        result = await audio_processor.transcribe(temp_path)
+        
+        return {
+            "filename": file.filename,
+            "transcription": result["text"],
+            "language": result.get("language"),
+            "duration": result.get("duration")
+        }
+    
+    finally:
+        # Cleanup
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+@app.post("/process/image")
+async def process_image_endpoint(
+    file: Optional[UploadFile] = File(None),
+    image_url: Optional[str] = None
+):
+    """Extract text from image using OCR"""
+    
+    from app.processing.image_processor import ImageProcessor
+    
+    if not file and not image_url:
+        raise HTTPException(status_code=400, detail="Provide either file or image_url")
+    
+    image_processor = ImageProcessor()
+    
+    if file:
+        # Save temporarily
+        import tempfile
+        import os
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            temp_path = tmp_file.name
+        
+        try:
+            result = await image_processor.process_image(temp_path)
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+    else:
+        result = await image_processor.process_image(image_url)
+    
+    return result
 
 
 @app.websocket("/ws/{client_id}")

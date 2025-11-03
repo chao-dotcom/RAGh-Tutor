@@ -54,14 +54,64 @@ run-prod:
 index:
 	python scripts/index_documents.py
 
+# Docker commands
+.PHONY: docker-build docker-run docker-stop docker-logs docker-shell docker-index docker-test
+
 docker-build:
-	docker build -t rag-api:latest -f docker/Dockerfile .
+	docker-compose build
 
 docker-run:
-	docker-compose -f docker/docker-compose.yml up
+	docker-compose up -d
+	@echo "✅ RAG System started at http://localhost:8000"
+	@echo "📊 Prometheus at http://localhost:9090"
 
 docker-stop:
-	docker-compose -f docker/docker-compose.yml down
+	docker-compose down
+
+docker-logs:
+	docker-compose logs -f rag-api
+
+docker-shell:
+	docker-compose exec rag-api bash
+
+docker-index:
+	docker-compose exec rag-api python scripts/index_documents.py
+
+docker-test:
+	docker-compose exec rag-api pytest tests/
+
+# Production commands
+.PHONY: prod-build prod-deploy prod-stop prod-logs
+
+prod-build:
+	docker-compose -f docker/docker-compose.prod.yml build
+
+prod-deploy:
+	docker-compose -f docker/docker-compose.prod.yml up -d
+	@echo "✅ Production deployment complete"
+
+prod-stop:
+	docker-compose -f docker/docker-compose.prod.yml down
+
+prod-logs:
+	docker-compose -f docker/docker-compose.prod.yml logs -f
+
+# Quick commands
+.PHONY: up down restart docker-clean docker-prune
+
+up: docker-run
+
+down: docker-stop
+
+restart: docker-stop docker-run
+
+# Cleanup
+docker-clean:
+	docker-compose down -v
+	docker system prune -f
+
+docker-prune:
+	docker system prune -af --volumes
 
 k8s-deploy:
 	bash scripts/deploy.sh

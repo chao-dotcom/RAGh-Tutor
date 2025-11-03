@@ -84,3 +84,33 @@ class FeedbackCollector:
                     continue
         
         return low_rated
+    
+    async def analyze_feedback_trends(self) -> Dict:
+        """Analyze feedback trends over time"""
+        if not self.feedback_file.exists():
+            return {}
+        
+        daily_ratings = {}
+        
+        with open(self.feedback_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                    date = entry['timestamp'][:10]  # Get date part
+                    
+                    if date not in daily_ratings:
+                        daily_ratings[date] = []
+                    
+                    daily_ratings[date].append(entry['rating'])
+                except (json.JSONDecodeError, KeyError):
+                    continue
+        
+        # Calculate daily averages
+        trends = {}
+        for date, ratings in daily_ratings.items():
+            trends[date] = {
+                'average_rating': sum(ratings) / len(ratings) if ratings else 0,
+                'total_feedback': len(ratings)
+            }
+        
+        return trends

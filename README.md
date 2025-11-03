@@ -6,7 +6,7 @@ A production-ready Retrieval-Augmented Generation (RAG) system built with FastAP
 
 [![RAGh-Tutor Demo](assets/ragh_tutor.png)](https://youtu.be/8j4DqY873Ck)
 
-Click the thumbnail above to watch the demo video!
+## Click the thumbnail above to watch the demo video!
 
 ## Features
 

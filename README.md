@@ -181,72 +181,115 @@ Kubernetes deployment manifests are available in the `k8s/` directory:
 ## Project Structure
 
 ```
-app/
-├── main.py              # FastAPI application entry point
-├── config.py            # Configuration management
-├── dependencies.py      # Dependency injection
+RAGh-Tutor/
+├── pom.xml                          # Maven dependencies
+├── Dockerfile                       # Docker configuration
+├── docker-compose-java.yml          # Docker Compose setup
+├── build.sh / build.bat            # Build scripts
+├── prometheus.yml                   # Prometheus config
 │
-├── chunking/            # Document chunking strategies
-│   ├── document_chunker.py
-│   ├── semantic_chunker.py
-│   └── specialized_chunker.py
+├── src/
+│   ├── main/
+│   │   ├── java/com/ragtutor/
+│   │   │   ├── RagTutorApplication.java    # Spring Boot entry point
+│   │   │   │
+│   │   │   ├── config/                     # Configuration classes
+│   │   │   │   ├── AppConfig.java
+│   │   │   │   ├── LLMConfig.java
+│   │   │   │   ├── EmbeddingConfig.java
+│   │   │   │   ├── RetrievalConfig.java
+│   │   │   │   ├── ChunkingConfig.java
+│   │   │   │   ├── MemoryConfig.java
+│   │   │   │   ├── AgentConfig.java
+│   │   │   │   ├── SecurityConfig.java
+│   │   │   │   └── WebConfig.java
+│   │   │   │
+│   │   │   ├── controller/                 # REST API
+│   │   │   │   └── RagController.java
+│   │   │   │
+│   │   │   ├── service/                    # Business logic
+│   │   │   │   ├── QueryService.java
+│   │   │   │   ├── DocumentService.java
+│   │   │   │   ├── ConversationService.java
+│   │   │   │   ├── FeedbackService.java
+│   │   │   │   ├── HealthService.java
+│   │   │   │   ├── MetricsService.java
+│   │   │   │   └── InitializationService.java
+│   │   │   │
+│   │   │   ├── schemas/                    # DTOs
+│   │   │   │   ├── QueryRequest.java
+│   │   │   │   ├── QueryResponse.java
+│   │   │   │   ├── ChatRequest.java
+│   │   │   │   ├── Document.java
+│   │   │   │   └── ...
+│   │   │   │
+│   │   │   ├── retrieval/                  # Vector store
+│   │   │   │   └── InMemoryVectorStore.java
+│   │   │   │
+│   │   │   ├── embedding/                  # Embedding generation
+│   │   │   │   └── EmbeddingModelService.java
+│   │   │   │
+│   │   │   ├── generation/                 # LLM integration
+│   │   │   │   └── LLMClient.java
+│   │   │   │
+│   │   │   ├── chunking/                   # Document chunking
+│   │   │   │   └── DocumentChunker.java
+│   │   │   │
+│   │   │   ├── processing/                 # Document processing
+│   │   │   │   └── DocumentLoader.java
+│   │   │   │
+│   │   │   ├── memory/                     # Conversation management
+│   │   │   │   └── ConversationManager.java
+│   │   │   │
+│   │   │   ├── agents/                     # RAG agent
+│   │   │   │   └── RAGAgent.java
+│   │   │   │
+│   │   │   ├── security/                   # Security components
+│   │   │   │   ├── ContentModerator.java
+│   │   │   │   ├── AuditLogger.java
+│   │   │   │   └── ActionBudgetGuard.java
+│   │   │   │
+│   │   │   ├── middleware/                 # Middleware
+│   │   │   │   └── RateLimiterFilter.java
+│   │   │   │
+│   │   │   ├── monitoring/                 # Observability
+│   │   │   │   ├── PerformanceProfiler.java
+│   │   │   │   └── TracingService.java
+│   │   │   │
+│   │   │   ├── performance/                # Performance optimization
+│   │   │   │   └── ResponseCache.java
+│   │   │   │
+│   │   │   ├── features/                   # Advanced features
+│   │   │   │   └── QueryAnalytics.java
+│   │   │   │
+│   │   │   ├── utils/                      # Utilities
+│   │   │   │   ├── TextUtils.java
+│   │   │   │   └── FileUtils.java
+│   │   │   │
+│   │   │   ├── exception/                  # Exception handling
+│   │   │   │   └── GlobalExceptionHandler.java
+│   │   │   │
+│   │   │   └── listener/                   # Event listeners
+│   │   │       └── ApplicationStartupListener.java
+│   │   │
+│   │   └── resources/
+│   │       └── application.properties      # Spring configuration
+│   │
+│   └── test/
+│       └── java/com/ragtutor/             # JUnit tests
+│           ├── RagTutorApplicationTests.java
+│           ├── HealthServiceTest.java
+│           └── DocumentChunkerTest.java
 │
-├── embedding/           # Embedding generation
-│   ├── embedding_model.py
-│   ├── batch_embedder.py
-│   └── multimodal_embedder.py
-│
-├── retrieval/           # Vector store and retrieval
-│   ├── vector_store.py
-│   ├── retrieval_pipeline.py
-│   ├── hybrid_search.py
-│   ├── reranker.py
-│   └── query_expansion.py
-│
-├── generation/          # LLM integration
-│   ├── llm_client.py
-│   ├── prompt_builder.py
-│   ├── response_parser.py
-│   └── citation_tracker.py
-│
-├── agents/              # Agent orchestration
-│   ├── rag_agent.py
-│   ├── contextual_agent_executor.py
-│   ├── tool_registry.py
-│   ├── action_planner.py
-│   └── tools/           # Agent tools
-│       └── browser_tool.py
-│
-├── memory/              # Conversation management
-│   ├── conversation_manager.py
-│   ├── context_window_manager.py
-│   ├── memory_store.py
-│   └── summarizer.py
-│
-├── processing/          # Document processing
-│   ├── document_loader.py
-│   ├── pdf_processor.py
-│   ├── audio_processor.py
-│   ├── image_processor.py
-│   ├── web_scraper.py
-│   └── table_extractor.py
-│
-├── security/            # Security components
-│   ├── content_moderation.py
-│   ├── pii_detector.py
-│   ├── rate_limiter.py
-│   ├── auth.py
-│   ├── audit_logger.py
-│   └── action_budget.py
-│
-├── streaming/          # Streaming support
-│   ├── sse_stream.py
-│   ├── websocket_handler.py
-│   └── stream_aggregator.py
-│
-├── monitoring/          # Observability & monitoring
-│   ├── metrics.py
-│   ├── health_checks.py
+├── docker/                                  # Docker configurations
+├── k8s/                                     # Kubernetes manifests
+├── guide/                                   # Documentation
+├── data/                                    # Data storage
+│   ├── embeddings/
+│   ├── cache/
+│   └── feedback/
+├── documents/                               # Document upload directory
+└── logs/                                    # Application logs
 
 ## 🧪 Testing
 

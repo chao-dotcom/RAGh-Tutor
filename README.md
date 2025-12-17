@@ -1,137 +1,109 @@
-# RAGh-Tutor
+# RAGh-Tutor - Java Edition
 
-A production-ready Retrieval-Augmented Generation (RAG) system built with FastAPI.
+A production-ready Retrieval-Augmented Generation (RAG) system built with **Java 17** and **Spring Boot 3**.
+
+> **Note:** This is the Java implementation. For the Python version, see [legacy Python README](README-PYTHON.md).
 
 ## 🎥 Demo
 
 [![RAGh-Tutor Demo](assets/ragh_tutor.png)](https://youtu.be/8j4DqY873Ck)
 
-## Click the thumbnail above to watch the demo video!
+Click the thumbnail above to watch the demo video!
 
-## Features
+## ✨ Features
 
-- **Document Processing**: Support for PDF, DOCX, Excel, CSV, HTML, JSON, Audio, Images, and more
-- **Advanced Chunking**: Multiple chunking strategies (semantic, specialized, overlap)
-- **Embedding**: Sentence transformers with batch processing and multimodal support
-- **Vector Store**: FAISS-based vector store with hybrid search (vector + BM25)
-- **LLM Integration**: Support for OpenAI and Anthropic
-- **Agent Orchestration**: RAG agent with tool support and contextual execution
-- **Conversation Memory**: Context management and summarization
-- **Security**: Content moderation, PII detection, rate limiting, audit logging
-- **Streaming**: Server-Sent Events (SSE) and WebSocket support
-- **Monitoring & Observability**: Metrics collection, health checks, performance profiling, tracing
-- **Performance Optimization**: Query optimization, response caching, batch processing
-- **Query Analytics**: Query pattern analysis, performance tracking, usage statistics
-- **Multi-Document QA**: Query across multiple specific documents
-- **Feedback System**: Collect and analyze user feedback
-- **API**: RESTful API with FastAPI
+- **🔍 Vector Search**: In-memory vector store with cosine similarity search
+- **📄 Document Processing**: PDF, TXT, Markdown support with Apache PDFBox
+- **🤖 Multiple LLM Providers**: OpenAI GPT-4, Anthropic Claude
+- **💬 Conversation Memory**: Context-aware multi-turn conversations
+- **⚡ Streaming Responses**: Server-Sent Events (SSE) for real-time streaming
+- **📊 Metrics & Monitoring**: Prometheus/Grafana integration with Micrometer
+- **🔒 Security**: Rate limiting, content moderation, audit logging
+- **🚀 Performance**: Response caching, batch processing, performance profiling
+- **📈 Analytics**: Query tracking, usage statistics, popular queries
+- **🐳 Docker Support**: Full containerization with Docker Compose
+- **📚 API Documentation**: Interactive OpenAPI/Swagger UI
+- **🧪 Testing**: JUnit 5, Mockito, comprehensive test coverage
 
-## Installation
+## 🚀 Quick Start
 
-### 🐳 Docker (Recommended - Solves Windows Issues)
+### Prerequisites
 
-**If you're encountering Windows installation errors (pytesseract, playwright), use Docker!**
+- Java 17 or higher
+- Maven 3.6+
+- OpenAI or Anthropic API key
 
-**Windows Commands (No Make Required):**
-```powershell
-# 1. Build Docker image (includes all dependencies pre-installed)
-docker-compose build
+### Installation
 
-# 2. Start services
-docker-compose up -d
-
-# 3. Index documents (after adding files to documents/ folder)
-docker-compose exec rag-api python scripts/index_documents.py
-
-# Access at http://localhost:8000
-```
-
-**Or with Make (if installed):**
-```powershell
-make docker-build
-make docker-run
-make docker-index
-```
-
-See `guide/windows-setup.md` for detailed Windows setup guide.
-
-### 💻 Native Installation
-
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-⚠️ **Windows Warning**: You may encounter errors with `pytesseract` and `playwright`. Use Docker instead!
-
-2. Set up environment variables (create `.env` file):
-```env
-OPENAI_API_KEY=your_key_here
-# or
-ANTHROPIC_API_KEY=your_key_here
-
-EMBEDDING_MODEL=sentence-transformers/all-mpnet-base-v2
-LLM_PROVIDER=openai
-LLM_MODEL=gpt-4
-```
-
-## Usage
-
-### With Docker (Recommended)
-
-**Windows Commands:**
-```powershell
-# Start services (includes API, Redis, Prometheus)
-docker-compose up -d
-
-# Index documents
-docker-compose exec rag-api python scripts/index_documents.py
-
-# Access services:
-# - API: http://localhost:8000
-# - API Docs: http://localhost:8000/docs
-# - Prometheus: http://localhost:9090
-# - Redis: localhost:6379
-
-# Query (PowerShell)
-$body = @{query="What is RAG?"} | ConvertTo-Json
-Invoke-WebRequest -Uri http://localhost:8000/query -Method POST -Body $body -ContentType "application/json"
-```
-
-**Or with Make:**
-```powershell
-make docker-run
-make docker-index
-```
-
-**Development Mode:**
-```powershell
-# Uses docker-compose.yml with hot-reload enabled
-docker-compose up -d
-
-# Logs
-docker-compose logs -f rag-api
-```
-
-### Native Installation
+#### Option 1: Local Development
 
 ```bash
-# Start server
-uvicorn app.main:app --reload
+# 1. Set your API key
+export OPENAI_API_KEY="your-api-key-here"
 
-# Index documents (place files in documents/ folder)
-make index
+# 2. Build the project
+mvn clean install
 
-# Query
-curl -X POST http://localhost:8000/query -H "Content-Type: application/json" -d '{"query": "What is RAG?"}'
+# 3. Run the application
+mvn spring-boot:run
+
+# 1. Add documents to the documents/ folder
+cp your-document.pdf documents/
+
+# 2. Index documents
+curl -X POST http://localhost:8000/api/v1/index
+
+# 3. Make your first query
+curl -X POST http://localhost:8000/api/v1/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is retrieval augmented generation?", "topK": 5}'
 ```
 
-## API Endpoints
+## 📖 Documentation
+
+- **API Docs**: http://localhost:8000/swagger-ui.html
+- **Quick Start**: [guide/java-quick-start.md](guide/java-quick-start.md)
+- **Migration Guide**: [guide/python-to-java-migration.md](guide/python-to-java-migration.md)
+- **Full README**: [README-JAVA.md](README-JAVA.md)
+
+## 🛠️ Configuration
+
+Edit `src/main/resources/application.properties`:
+
+```properties
+# Server
+server.port=8000
+
+# LLM Settings
+llm.provider=openai
+llm.openai.api-key=${OPENAI_API_KEY}
+llm.openai.model=gpt-4
+llm.temperature=0.7
+llm.max-tokens=2000
+
+# Embedding
+embedding.model=sentence-transformers/all-mpnet-base-v2
+embedding.dimension=768
+
+# Retrieval
+retrieval.top-k=10
+retrieval.mode=hybrid
+
+# Chunking
+chunking.size=800
+chunking.overlap=200
+
+# Security
+security.rate-limit.enabled=true
+security.rate-limit.requests=100
+```
+
+## 📡 API Endpoints
 
 ### Core Endpoints
-- `GET /health` - Health check
-- `GET /health/detailed` - Detailed health check with component status
-- `GET /ready` - Kubernetes readiness check
+- `GET /api/v1/health` - Health check
+- `GET /api/v1/health/detailed` - Detailed health with component status
+- `GET /api/v1/ready` - Kubernetes readiness probe
 - `POST /query` - Query the knowledge base
 - `POST /query/multi-document` - Query across multiple specific documents
 - `POST /stream` - Streaming query (Server-Sent Events)
@@ -275,36 +247,129 @@ app/
 ├── monitoring/          # Observability & monitoring
 │   ├── metrics.py
 │   ├── health_checks.py
-│   ├── performance_profiler.py
-│   └── tracing.py
-│
-├── performance/         # Performance optimization
-│   ├── query_optimizer.py
-│   ├── response_cache.py
-│   └── batch_processor.py
-│
-├── features/            # Advanced features
-│   ├── feedback_collector.py
-│   ├── multi_document_qa.py
-│   └── query_analytics.py
-│
-├── middleware/          # Middleware components
-│   └── rate_limiter.py
-│
-├── schemas/             # Pydantic schemas
-│   ├── requests.py
-│   ├── responses.py
-│   ├── documents.py
-│   └── events.py
-│
-└── utils/               # Utility functions
-    ├── caching.py
-    ├── file_handling.py
-    ├── text_processing.py
-    └── validators.py
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+mvn test
+
+# Run with coverage
+mvn clean test jacoco:report
+
+# Run integration tests
+mvn verify
+
+# View coverage report
+open target/site/jacoco/index.html
 ```
 
-## License
+## 🚢 Deployment
 
-MIT
+### Docker Production
+
+```bash
+# Build production image
+docker build -t rag-tutor:latest .
+
+# Run with environment variables
+docker run -d -p 8000:8000 \
+  -e OPENAI_API_KEY=$OPENAI_API_KEY \
+  -v ./documents:/app/documents \
+  -v ./data:/app/data \
+  rag-tutor:latest
+```
+
+### Kubernetes
+
+Kubernetes manifests are available in the `k8s/` directory:
+- Deployment with horizontal pod autoscaling
+- Service and Ingress configuration
+- ConfigMap and Secrets management
+- Persistent volume claims
+
+```bash
+kubectl apply -f k8s/
+```
+
+## 📊 Monitoring
+
+### Prometheus & Grafana
+
+```bash
+# Start with monitoring stack
+docker-compose -f docker-compose-java.yml up -d
+
+# Access dashboards
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000 (admin/admin)
+- Metrics: http://localhost:8000/actuator/prometheus
+```
+
+### Metrics Tracked
+- Query latency and throughput
+- Retrieval performance
+- LLM generation time
+- Cache hit rates
+- Error rates by type
+- JVM metrics (heap, GC, threads)
+
+## 🔒 Security Features
+
+- ✅ **Rate Limiting**: Token bucket algorithm (100 req/min default)
+- ✅ **Content Moderation**: Filters inappropriate content
+- ✅ **Audit Logging**: Complete audit trail of operations
+- ✅ **Action Budget**: Prevents abuse with session limits
+- ✅ **Input Validation**: Bean Validation on all inputs
+- ✅ **CORS Configuration**: Configurable cross-origin policies
+
+## ⚡ Performance Features
+
+- ✅ **Response Caching**: Caffeine cache for frequent queries
+- ✅ **Batch Processing**: Efficient batch embedding generation
+- ✅ **Connection Pooling**: HTTP client connection reuse
+- ✅ **Async Operations**: CompletableFuture for parallel processing
+- ✅ **Performance Profiling**: Detailed timing metrics
+
+## 🔄 Migration from Python
+
+Migrating from the Python version? See [Python to Java Migration Guide](guide/python-to-java-migration.md).
+
+**Key Differences:**
+- FastAPI → Spring Boot
+- asyncio → CompletableFuture
+- Pydantic → Lombok + Bean Validation
+- FAISS → In-memory vector store
+- Port: Same (8000)
+- API: Compatible endpoints
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) file for details
+
+## 🆘 Support
+
+- 📖 [Documentation](guide/)
+- 🐛 [Issue Tracker](https://github.com/yourusername/RAGh-Tutor/issues)
+- 💬 [Discussions](https://github.com/yourusername/RAGh-Tutor/discussions)
+
+## 🙏 Acknowledgments
+
+- Original Python implementation
+- Spring Boot framework
+- LangChain4j library
+- Apache PDFBox
+- OpenAI & Anthropic
+
+---
+
+**Built with ☕ and Java 17**
 
